@@ -1933,32 +1933,22 @@
   }
 
   // -----------------------------------------------------------
-  // QR code (Station 10)
-  //   Uses window.location.href as target — points at this
-  //   deployed page. Renders once per session.
+  // QR code (Station 10) — points at the deployed keynote page
   // -----------------------------------------------------------
+  const QR_TARGET_URL = 'https://herr-schmid.github.io/die-bessere-ki-gewinnt/';
+
   function renderQR() {
     if (typeof qrcode === 'undefined') {
-      // lib not ready yet (defer), retry shortly
       setTimeout(renderQR, 200);
       return;
     }
     const target = document.getElementById('qr-code');
     if (!target || target.dataset.rendered === '1') return;
-    try {
-      const qr = qrcode(0, 'M');
-      qr.addData(window.location.href);
-      qr.make();
-      target.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
-      target.dataset.rendered = '1';
-    } catch (e) {
-      // if URL is very long, retry with a stub
-      const qr = qrcode(0, 'L');
-      qr.addData('https://start-ki.de');
-      qr.make();
-      target.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
-      target.dataset.rendered = '1';
-    }
+    const qr = qrcode(0, 'M');
+    qr.addData(QR_TARGET_URL);
+    qr.make();
+    target.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
+    target.dataset.rendered = '1';
   }
 
   // -----------------------------------------------------------
