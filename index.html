@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Die bessere KI gewinnt — Michael Schmid · Pharma UNO KI Summit 2026</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+
+<!-- QR code generator, used on Station 10 -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+
+<style>
+  /* =========================================================
+     DESIGN TOKENS
+     ========================================================= */
+  :root {
+    --paper:        #FDFDFB;
+    --ink:          #0A0A0A;
+    --amber-light:  #B8862E;
+    --amber-dark:   #D9A84A;
+    --muted-light:  #6B6B6B;
+    --muted-dark:   #A8A8A8;
+
+    --font-display: 'Fraunces', 'GT Sectra', Georgia, 'Times New Roman', serif;
+    --font-ui:      'Instrument Sans', 'Neue Haas Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+    --ease:         cubic-bezier(0.22, 0.61, 0.36, 1);
+    --dur-fade:     500ms;
+    --dur-reveal:   700ms;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--paper);
+    color: var(--ink);
+    transition: background-color var(--dur-fade) var(--ease),
+                color var(--dur-fade) var(--ease);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body[data-mode="dark"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* =========================================================
+     STAGE
+     ========================================================= */
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .station {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    padding: 6vh 7vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-fade) var(--ease);
+  }
+
+  .station.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .station-label {
+    position: absolute;
+    top: 3.2vh;
+    left: 7vw;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.32;
+  }
+
+  /* =========================================================
+     REVEAL ANIMATIONS
+     ========================================================= */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity var(--dur-reveal) var(--ease),
+                transform var(--dur-reveal) var(--ease);
+  }
+  .station.is-active .reveal,
+  .frame.is-active-frame .reveal {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .station.is-active .reveal[data-delay="1"],
+  .frame.is-active-frame .reveal[data-delay="1"] { transition-delay: 120ms; }
+  .station.is-active .reveal[data-delay="2"],
+  .frame.is-active-frame .reveal[data-delay="2"] { transition-delay: 320ms; }
+  .station.is-active .reveal[data-delay="3"],
+  .frame.is-active-frame .reveal[data-delay="3"] { transition-delay: 540ms; }
+  .station.is-active .reveal[data-delay="4"],
+  .frame.is-active-frame .reveal[data-delay="4"] { transition-delay: 780ms; }
+  .station.is-active .reveal[data-delay="5"],
+  .frame.is-active-frame .reveal[data-delay="5"] { transition-delay: 1040ms; }
+  .station.is-active .reveal[data-delay="6"],
+  .frame.is-active-frame .reveal[data-delay="6"] { transition-delay: 1320ms; }
+
+  /* =========================================================
+     MULTI-FRAME SUPPORT
+     ========================================================= */
+  .multi-frame .frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 6vh 7vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 400ms var(--ease);
+  }
+  .multi-frame .frame.is-active-frame {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .frame-pager {
+    position: absolute;
+    top: 3.2vh;
+    right: 7vw;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.32;
+    z-index: 20;
+  }
+  .frame-pager .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.35;
+    transition: opacity 200ms var(--ease);
+  }
+  .frame-pager .dot.is-on { opacity: 1; }
+
+  /* =========================================================
+     STATION 1 — TITEL
+     ========================================================= */
+  #station-1 .title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(64px, 10vw, 148px);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    max-width: 14ch;
+    font-variation-settings: "opsz" 144;
+  }
+  #station-1 .subtitle {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(26px, 3vw, 46px);
+    line-height: 1.25;
+    margin-top: 3vh;
+    color: var(--muted-light);
+    max-width: 32ch;
+    letter-spacing: -0.005em;
+  }
+  #station-1 .meta {
+    position: absolute;
+    bottom: 6vh;
+    left: 7vw;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-light);
+  }
+
+  /* =========================================================
+     STATION 2 — DAS VERSPRECHEN
+     ========================================================= */
+  #station-2 { padding: 6vh 8vw 7vh; }
+  #station-2 .visual-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 6vw, 100px);
+    align-items: center;
+    justify-items: center;
+    height: 44vh;
+    position: relative;
+  }
+  #station-2 .visual-row::after {
+    content: "";
+    position: absolute;
+    left: 10%; right: 10%; bottom: 6%;
+    height: 1px;
+    background: linear-gradient(to right,
+      transparent 0%, var(--amber-light) 35%,
+      var(--amber-light) 65%, transparent 100%);
+    opacity: 0.4;
+  }
+  .protein-svg, .human-svg { width: 100%; max-height: 100%; max-width: 380px; }
+  #station-2 .caption-wrap { text-align: center; margin-top: 3.5vh; }
+  #station-2 .caption-block {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 26px 13px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.1vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  #station-2 .caption-block .sep { opacity: 0.45; margin: 0 0.9em; }
+  #station-2 .merksatz {
+    margin-top: 4.5vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(30px, 3.4vw, 52px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  /* =========================================================
+     STATION 2b — ZWEI BEGEISTERUNGEN
+     ========================================================= */
+  #station-2b { padding: 8vh 9vw; }
+  #station-2b .blocks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(50px, 8vw, 140px);
+    align-items: start;
+    margin-top: 2vh;
+  }
+  #station-2b .block { display: flex; flex-direction: column; gap: 1.4vh; }
+  #station-2b .block .kicker {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-light);
+  }
+  #station-2b .block .figure {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(52px, 7vw, 108px);
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    font-variation-settings: "opsz" 144;
+  }
+  #station-2b .block .caption {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(22px, 2.3vw, 34px);
+    line-height: 1.3;
+    margin-top: 0.6vh;
+    color: var(--ink);
+  }
+  #station-2b .block .source {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-top: 1.2vh;
+  }
+  #station-2b .divider {
+    width: 32%;
+    height: 1px;
+    background: var(--ink);
+    opacity: 0.2;
+    margin: 6vh auto 4vh;
+  }
+  #station-2b .merksatz {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(28px, 3vw, 46px);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-align: center;
+  }
+
+  /* =========================================================
+     STATION 3 — PLAUSIBEL vs. BELASTBAR (SCHWARZ)
+     ========================================================= */
+  #station-3 { justify-content: center; padding: 8vh 8vw; }
+  #station-3 .old-frame {
+    display: block;
+    text-align: center;
+    margin-bottom: 4.5vh;
+    position: relative;
+  }
+  #station-3 .old-frame .old-text {
+    display: inline-block;
+    position: relative;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(32px, 4.4vw, 68px);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    color: var(--paper);
+    padding: 0 0.15em;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 600ms var(--ease),
+                transform 600ms var(--ease),
+                color 500ms var(--ease);
+  }
+  #station-3 .old-frame .old-text .small {
+    font-style: italic;
+    font-weight: 300;
+    font-variation-settings: "opsz" 14;
+    color: var(--muted-dark);
+    display: inline-block;
+    margin: 0 0.25em;
+  }
+  #station-3 .old-frame .strike {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scaleX(0);
+    transform-origin: left center;
+    height: 3px;
+    width: 100%;
+    background: var(--amber-dark);
+    transition: transform 700ms var(--ease);
+    pointer-events: none;
+  }
+  #station-3.is-active .old-frame .old-text {
+    opacity: 1;
+    transform: translateY(0);
+    color: rgba(253, 253, 251, 0.42);
+    transition-delay: 300ms, 300ms, 2400ms;
+  }
+  #station-3.is-active .old-frame .strike {
+    transform: translate(-50%, -50%) scaleX(0.94);
+    transition-delay: 2000ms;
+  }
+  #station-3 .pivot {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(56px, 8.2vw, 132px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--amber-dark);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms var(--ease) 2800ms,
+                transform 700ms var(--ease) 2800ms;
+  }
+  #station-3.is-active .pivot { opacity: 1; transform: translateY(0); }
+  #station-3 .pivot .vs {
+    font-style: italic;
+    font-weight: 300;
+    font-variation-settings: "opsz" 14;
+    color: var(--muted-dark);
+    display: inline-block;
+    margin: 0 0.18em;
+  }
+  #station-3 .closing {
+    margin-top: 7vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.4vw, 34px);
+    line-height: 1.35;
+    text-align: center;
+    color: var(--paper);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms var(--ease) 3500ms,
+                transform 700ms var(--ease) 3500ms;
+  }
+  #station-3.is-active .closing { opacity: 1; transform: translateY(0); }
+
+  /* =========================================================
+     STATION 4 — PHARMA IST ANDERS
+     ========================================================= */
+  #station-4 { padding: 10vh 7vw 8vh; }
+  #station-4 .pillars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(24px, 3.5vw, 64px);
+    margin-top: 1vh;
+  }
+  #station-4 .pillar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #station-4 .pillar-word {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(34px, 4.8vw, 82px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    padding-bottom: 1.4vh;
+  }
+  #station-4 .pillar-base {
+    width: 100%;
+    height: 3px;
+    background: var(--amber-light);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 600ms var(--ease);
+  }
+  #station-4.is-active .pillar:nth-child(1) .pillar-base { transform: scaleX(1); transition-delay: 900ms; }
+  #station-4.is-active .pillar:nth-child(2) .pillar-base { transform: scaleX(1); transition-delay: 1050ms; }
+  #station-4.is-active .pillar:nth-child(3) .pillar-base { transform: scaleX(1); transition-delay: 1200ms; }
+  #station-4.is-active .pillar:nth-child(4) .pillar-base { transform: scaleX(1); transition-delay: 1350ms; }
+  #station-4 .merksatz {
+    margin-top: 10vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(26px, 3vw, 44px);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-align: center;
+    max-width: 34ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #station-4 .merksatz .accent { color: var(--amber-light); font-style: italic; }
+
+  /* =========================================================
+     STATION 5 — VIER QUALITÄTSDIMENSIONEN
+     ========================================================= */
+  #station-5 { padding: 5vh 6vw 4vh; justify-content: flex-start; }
+  #station-5 .kicker-top {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.2vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-light);
+    text-align: center;
+    margin: 2vh 0 3vh;
+  }
+  #station-5 .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: clamp(28px, 3.5vh, 44px) clamp(40px, 5vw, 84px);
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+  #station-5 .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: clamp(18px, 2.6vh, 34px) clamp(18px, 2vw, 36px) 0;
+    border-top: 2px solid var(--amber-light);
+    min-height: 0;
+  }
+  #station-5 .card-num {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.1vw, 18px);
+    letter-spacing: 3px;
+    color: var(--amber-light);
+    margin-bottom: 1.6vh;
+  }
+  #station-5 .card-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(38px, 4.6vw, 76px);
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 1.4vh;
+  }
+  #station-5 .card-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(19px, 1.9vw, 28px);
+    line-height: 1.3;
+    color: var(--muted-light);
+  }
+  #station-5.is-active .kicker-top.reveal                 { transition-delay: 200ms; }
+  #station-5.is-active .card.reveal[data-delay="2"]       { transition-delay: 1000ms; }
+  #station-5.is-active .card.reveal[data-delay="3"]       { transition-delay: 3200ms; }
+  #station-5.is-active .card.reveal[data-delay="4"]       { transition-delay: 5400ms; }
+  #station-5.is-active .card.reveal[data-delay="5"]       { transition-delay: 7600ms; }
+  #station-5.is-active .merksatz.reveal[data-delay="6"]   { transition-delay: 9800ms; }
+  #station-5 .merksatz {
+    margin-top: 3vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.4vw, 34px);
+    line-height: 1.25;
+    text-align: center;
+    color: var(--ink);
+  }
+  #station-5 .merksatz .accent { color: var(--amber-light); }
+
+  /* =========================================================
+     STATION 6 — DER SENSIBLE MOMENT (SCHWARZ · Herzstück)
+     ========================================================= */
+  #station-6 .chat-window {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform-origin: top left;
+    transform: translate(-50%, -50%) scale(1);
+    width: clamp(440px, 40vw, 560px);
+    background: #151515;
+    border: 1px solid #262626;
+    border-radius: 22px;
+    padding: 32px 30px 26px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 80px rgba(217, 168, 74, 0.06);
+    z-index: 5;
+    opacity: 0;
+    transition: transform 900ms var(--ease),
+                top 900ms var(--ease),
+                left 900ms var(--ease),
+                opacity 500ms var(--ease);
+  }
+  #station-6.is-active .chat-window { opacity: 1; }
+  #station-6[data-active-frame="1"] .chat-window {
+    top: 8vh; left: 6vw;
+    transform: translate(0, 0) scale(0.55);
+  }
+  #station-6 .chat-window .status-row {
+    display: flex; align-items: center;
+    gap: 10px; margin-bottom: 20px;
+  }
+  #station-6 .chat-window .status-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--amber-dark);
+    box-shadow: 0 0 12px rgba(217, 168, 74, 0.8);
+    animation: pulse-amber 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse-amber {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.15); }
+  }
+  #station-6 .chat-window .status-text {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+  }
+  #station-6 .chat-bubble-stack {
+    position: relative;
+    min-height: 140px;
+  }
+  #station-6 .chat-typing {
+    display: inline-flex; align-items: center;
+    gap: 6px; padding: 20px 24px;
+    background: #262626;
+    border-radius: 18px 18px 18px 4px;
+    opacity: 1;
+    transition: opacity 400ms var(--ease);
+  }
+  #station-6 .chat-typing.is-gone { opacity: 0; }
+  #station-6 .chat-typing .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted-dark);
+    animation: typing-bounce 1.4s infinite ease-in-out;
+  }
+  #station-6 .chat-typing .dot:nth-child(2) { animation-delay: 0.18s; }
+  #station-6 .chat-typing .dot:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes typing-bounce {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30%           { opacity: 1;    transform: translateY(-5px); }
+  }
+  #station-6 .chat-bubble {
+    position: absolute; inset: 0;
+    background: #262626;
+    color: var(--paper);
+    padding: 22px 26px;
+    border-radius: 18px 18px 18px 4px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.1vw, 32px);
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 500ms var(--ease),
+                transform 500ms var(--ease);
+  }
+  #station-6 .chat-bubble.is-visible { opacity: 1; transform: translateY(0); }
+  #station-6 .chat-window .timestamp {
+    margin-top: 16px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--muted-dark);
+    opacity: 0;
+    transition: opacity 400ms var(--ease);
+  }
+  #station-6 .chat-window .timestamp.is-visible { opacity: 1; }
+  #station-6 .frame[data-frame="0"] {
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 10vh;
+  }
+  #station-6 .chat-caption {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.3vw, 32px);
+    line-height: 1.3;
+    text-align: center;
+    color: var(--muted-dark);
+    max-width: 36ch;
+  }
+  #station-6 .frame[data-frame="0"].is-active-frame .chat-caption.reveal {
+    transition-delay: 2600ms;
+  }
+  #station-6 .frame[data-frame="1"] {
+    padding: 8vh 7vw 7vh 7vw;
+    justify-content: center;
+    align-items: stretch;
+  }
+  #station-6 .escalation-wrap {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-left: clamp(40px, 20vw, 360px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #station-6 .escalation {
+    display: flex; flex-direction: column;
+    align-items: flex-start;
+  }
+  #station-6 .escalation-row {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(28px, 3.2vw, 46px);
+    line-height: 1.35;
+    color: var(--muted-dark);
+    letter-spacing: -0.005em;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms var(--ease),
+                transform 700ms var(--ease);
+  }
+  #station-6 .escalation-row.climax {
+    margin-top: 3vh;
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(56px, 8vw, 124px);
+    line-height: 1.0;
+    letter-spacing: 0.01em;
+    color: var(--amber-dark);
+    transition-duration: 900ms;
+  }
+  #station-6 .frame[data-frame="1"].is-active-frame .escalation-row:nth-child(1) {
+    opacity: 1; transform: translateY(0); transition-delay: 1200ms;
+  }
+  #station-6 .frame[data-frame="1"].is-active-frame .escalation-row:nth-child(2) {
+    opacity: 1; transform: translateY(0); transition-delay: 3000ms;
+  }
+  #station-6 .frame[data-frame="1"].is-active-frame .escalation-row.climax {
+    opacity: 1; transform: translateY(0); transition-delay: 5000ms;
+  }
+  #station-6 .escalation-merksatz {
+    margin-top: auto; padding-top: 6vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.3vw, 32px);
+    line-height: 1.35;
+    color: var(--paper);
+    max-width: 46ch;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 600ms var(--ease),
+                transform 600ms var(--ease);
+  }
+  #station-6 .frame[data-frame="1"].is-active-frame .escalation-merksatz {
+    opacity: 1; transform: translateY(0); transition-delay: 7000ms;
+  }
+
+  /* =========================================================
+     STATION 7 — DASSELBE MUSTER
+
+     Drei Zeilen im rhythmischen Schlag "Begriff — Bedingung".
+     Staggered alle 1,5 s, damit der Speaker den Rhythmus
+     sprechen kann, ohne der Animation hinterherzueilen.
+     ========================================================= */
+  #station-7 { padding: 6vh 7vw; justify-content: flex-start; }
+  #station-7 .kicker-top {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.2vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-light);
+    text-align: center;
+    margin: 4vh 0 6vh;
+  }
+  #station-7 .pattern-rows {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5vh, 3.5vh, 4.5vh);
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  #station-7 .pattern-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    column-gap: clamp(16px, 2.5vw, 48px);
+    align-items: baseline;
+    padding-bottom: 2.2vh;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.1);
+  }
+  #station-7 .pattern-label {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(32px, 4vw, 66px);
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    text-align: right;
+  }
+  #station-7 .pattern-dash {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(26px, 3.2vw, 52px);
+    line-height: 1;
+    color: var(--amber-light);
+    padding: 0 0.1em;
+  }
+  #station-7 .pattern-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(22px, 2.5vw, 38px);
+    line-height: 1.2;
+    color: var(--muted-light);
+    text-align: left;
+    letter-spacing: -0.005em;
+  }
+  #station-7 .merksatz {
+    margin-top: 6vh;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(24px, 2.7vw, 40px);
+    line-height: 1.25;
+    text-align: center;
+    color: var(--ink);
+    max-width: 42ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #station-7 .merksatz .accent { color: var(--amber-light); }
+  #station-7.is-active .kicker-top.reveal                  { transition-delay: 200ms; }
+  #station-7.is-active .pattern-row.reveal[data-delay="2"] { transition-delay: 1000ms; }
+  #station-7.is-active .pattern-row.reveal[data-delay="3"] { transition-delay: 2500ms; }
+  #station-7.is-active .pattern-row.reveal[data-delay="4"] { transition-delay: 4000ms; }
+  #station-7.is-active .merksatz.reveal[data-delay="6"]    { transition-delay: 5800ms; }
+
+  /* =========================================================
+     STATION 7b — ADMIN · ORGANISATION · MENSCH
+
+     Zwei große Sätze, reduziert. Unter "Organisation" und
+     "Menschen" zeichnet sich je eine Amber-Linie — verzögert,
+     als choreografische Pointe nach dem Sprechsatz.
+     ========================================================= */
+  #station-7b { justify-content: center; padding: 10vh 9vw; }
+  #station-7b .reduction {
+    max-width: 1400px; margin: 0 auto;
+  }
+  #station-7b .reduction-line {
+    font-family: var(--font-display);
+    font-weight: 450;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(34px, 4.8vw, 88px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 4vh;
+  }
+  #station-7b .reduction-line:last-child { margin-bottom: 0; }
+  #station-7b .amber-pointe {
+    color: var(--amber-light);
+    position: relative;
+    display: inline-block;
+  }
+  #station-7b .amber-pointe::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -0.08em;
+    height: 3px;
+    background: var(--amber-light);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 600ms var(--ease);
+  }
+  #station-7b.is-active .amber-pointe-1::after { transform: scaleX(1); transition-delay: 2400ms; }
+  #station-7b.is-active .amber-pointe-2::after { transform: scaleX(1); transition-delay: 3100ms; }
+  #station-7b.is-active .reduction-line.reveal[data-delay="1"] { transition-delay: 400ms; }
+  #station-7b.is-active .reduction-line.reveal[data-delay="3"] { transition-delay: 1600ms; }
+
+  /* =========================================================
+     STATION 8 — ARCHITEKTUR DES VERTRAUENS (SCHWARZ)
+
+     Aufbau in drei Schritten: Regulierung, Ethik, Zusammen.
+     Die Synthese "Zusammen: Architektur des Vertrauens"
+     steht in Amber — sie ist nicht die dritte Zeile der
+     Liste, sondern das Resultat aus den ersten beiden.
+     ========================================================= */
+  #station-8 {
+    padding: 7vh 8vw;
+    justify-content: space-between;
+  }
+  #station-8 .definitions {
+    display: flex;
+    flex-direction: column;
+    gap: 2.2vh;
+    max-width: 1400px;
+  }
+  #station-8 .def-row {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 2.6vw, 40px);
+    line-height: 1.35;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 0.35em;
+  }
+  #station-8 .def-label {
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    color: var(--paper);
+    opacity: 0.75;
+    letter-spacing: -0.015em;
+  }
+  #station-8 .def-separator {
+    color: var(--muted-dark);
+    font-weight: 400;
+    margin-right: 0.2em;
+  }
+  #station-8 .def-text {
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    color: var(--muted-dark);
+  }
+  #station-8 .def-row.def-synthesis {
+    margin-top: 1.5vh;
+    font-size: clamp(28px, 3.2vw, 52px);
+  }
+  #station-8 .def-synthesis .def-label,
+  #station-8 .def-synthesis .def-separator,
+  #station-8 .def-synthesis .def-text {
+    color: var(--amber-dark);
+    opacity: 1;
+    font-style: normal;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    letter-spacing: -0.02em;
+  }
+  #station-8 .vertrauen-merksatz {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(42px, 5.4vw, 88px);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--paper);
+    max-width: 22ch;
+    margin: 4vh 0 2vh;
+  }
+  #station-8 .vertrauen-merksatz .emphasize { color: var(--amber-dark); }
+  #station-8 .safety-quote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(16px, 1.5vw, 22px);
+    line-height: 1.5;
+    color: var(--muted-dark);
+    max-width: 48ch;
+    padding-left: 1.4em;
+    border-left: 2px solid rgba(217, 168, 74, 0.3);
+    align-self: flex-end;
+    margin-left: auto;
+  }
+  #station-8.is-active .def-row.reveal[data-delay="1"]            { transition-delay: 400ms; }
+  #station-8.is-active .def-row.reveal[data-delay="2"]            { transition-delay: 2200ms; }
+  #station-8.is-active .def-row.def-synthesis.reveal[data-delay="4"] { transition-delay: 4200ms; transition-duration: 900ms; }
+  #station-8.is-active .vertrauen-merksatz.reveal[data-delay="6"] { transition-delay: 6000ms; transition-duration: 900ms; }
+  #station-8.is-active .safety-quote.reveal[data-delay="8"]       { transition-delay: 8200ms; }
+
+  /* =========================================================
+     STATION 8b — TRIADE · KERNGEDANKE (SCHWARZ · 3 Frames)
+
+     Frame 0: Fünf Bausteine, vertikal gestapelt
+     Frame 1: Die Triade (Variante B — "die Erweiterung"),
+              gezeichnet in fünf Stufen
+     Frame 2: Verantwortung — was produziert / was wird
+     ========================================================= */
+
+  /* --- Frame 0: Bausteine --- */
+  #station-8b .frame[data-frame="0"] {
+    justify-content: center;
+    align-items: center;
+  }
+  #station-8b .bausteine-header {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.2vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-dark);
+    opacity: 0.7;
+    margin-bottom: 5vh;
+    text-align: center;
+  }
+  #station-8b .bausteine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1.4vh, 1.8vh, 2.2vh);
+  }
+  #station-8b .baustein {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(38px, 5vw, 88px);
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--amber-dark);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms var(--ease),
+                transform 700ms var(--ease);
+  }
+  #station-8b .frame[data-frame="0"].is-active-frame .baustein:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 400ms; }
+  #station-8b .frame[data-frame="0"].is-active-frame .baustein:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 1500ms; }
+  #station-8b .frame[data-frame="0"].is-active-frame .baustein:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 2600ms; }
+  #station-8b .frame[data-frame="0"].is-active-frame .baustein:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 3700ms; }
+  #station-8b .frame[data-frame="0"].is-active-frame .baustein:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 4800ms; }
+
+  /* --- Frame 1: Triade --- */
+  #station-8b .frame[data-frame="1"] {
+    justify-content: center;
+    align-items: center;
+    padding: 6vh 6vw;
+  }
+  #station-8b .triade-heading {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(13px, 1.2vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-dark);
+    opacity: 0.7;
+    text-align: center;
+    margin-bottom: 3vh;
+  }
+  #station-8b .triade-stage {
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    height: auto;
+  }
+  #station-8b .triade-svg {
+    width: 100%;
+    height: auto;
+    max-height: 62vh;
+    display: block;
+  }
+
+  #station-8b .triade-svg .patient,
+  #station-8b .triade-svg .unternehmen,
+  #station-8b .triade-svg .ki {
+    opacity: 0;
+    transform: scale(0);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity 500ms var(--ease),
+                transform 600ms var(--ease);
+  }
+  #station-8b .triade-svg .existing-bond {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    transition: stroke-dashoffset 1000ms var(--ease);
+  }
+  #station-8b .triade-svg .new-bond {
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    transition: stroke-dashoffset 800ms var(--ease);
+  }
+  #station-8b .triade-svg .label {
+    opacity: 0;
+    transition: opacity 600ms var(--ease);
+  }
+
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .patient      { opacity: 1; transform: scale(1); transition-delay: 500ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .unternehmen  { opacity: 1; transform: scale(1); transition-delay: 800ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .patient-label,
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .unternehmen-label {
+    opacity: 1; transition-delay: 1100ms;
+  }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .existing-bond    { stroke-dashoffset: 0; transition-delay: 1500ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .existing-label   { opacity: 0.55; transition-delay: 2500ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .ki               { opacity: 1; transform: scale(1); transition-delay: 3300ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .ki-label         { opacity: 1; transition-delay: 3600ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .new-bond         { stroke-dashoffset: 0; transition-delay: 4000ms; }
+  #station-8b .frame[data-frame="1"].is-active-frame .triade-svg .new-label        { opacity: 0.8; transition-delay: 5000ms; }
+
+  /* --- Frame 2: Verantwortung --- */
+  #station-8b .frame[data-frame="2"] {
+    justify-content: center;
+    padding: 8vh 8vw;
+  }
+  #station-8b .resp-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 6vw, 100px);
+    align-items: start;
+    margin-bottom: 6vh;
+  }
+  #station-8b .resp-col {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(26px, 3vw, 46px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 700ms var(--ease),
+                transform 700ms var(--ease);
+  }
+  #station-8b .resp-col .resp-kicker {
+    display: block;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(12px, 1.1vw, 15px);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 1.4vh;
+    opacity: 0.55;
+  }
+  #station-8b .resp-col em {
+    font-style: italic;
+    font-variation-settings: "opsz" 14;
+  }
+  #station-8b .resp-col-muted        { color: var(--muted-dark); }
+  #station-8b .resp-col-amber        { color: var(--amber-dark); }
+  #station-8b .resp-col-amber .resp-kicker { color: var(--amber-dark); opacity: 0.9; }
+  #station-8b .resp-merksatz {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(30px, 3.6vw, 58px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+    max-width: 44ch;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 800ms var(--ease),
+                transform 800ms var(--ease);
+  }
+  #station-8b .resp-merksatz .amber { color: var(--amber-dark); }
+
+  #station-8b .frame[data-frame="2"].is-active-frame .resp-col-muted   { opacity: 1; transform: translateY(0); transition-delay: 600ms; }
+  #station-8b .frame[data-frame="2"].is-active-frame .resp-col-amber   { opacity: 1; transform: translateY(0); transition-delay: 2400ms; }
+  #station-8b .frame[data-frame="2"].is-active-frame .resp-merksatz    { opacity: 1; transform: translateY(0); transition-delay: 4400ms; }
+
+  /* =========================================================
+     STATION 9 — DIE BESSERE KI GEWINNT
+     ========================================================= */
+  #station-9 { padding: 10vh 9vw; justify-content: center; }
+  #station-9 .nicht-die-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6vh;
+  }
+  #station-9 .nicht-zeile {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(30px, 3.8vw, 58px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--muted-light);
+  }
+  #station-9 .pivot-heading {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(64px, 9vw, 148px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--amber-light);
+    margin: 4vh 0 3vh;
+  }
+  #station-9 .coda {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(20px, 2.1vw, 30px);
+    line-height: 1.3;
+    color: var(--ink);
+    max-width: 52ch;
+  }
+  #station-9.is-active .nicht-zeile.reveal[data-delay="1"]  { transition-delay: 400ms; }
+  #station-9.is-active .nicht-zeile.reveal[data-delay="2"]  { transition-delay: 1600ms; }
+  #station-9.is-active .nicht-zeile.reveal[data-delay="3"]  { transition-delay: 2800ms; }
+  #station-9.is-active .pivot-heading.reveal[data-delay="5"] { transition-delay: 4400ms; transition-duration: 900ms; }
+  #station-9.is-active .coda.reveal[data-delay="6"]          { transition-delay: 6000ms; }
+
+  /* =========================================================
+     STATION 10 — SCHLUSS · WÜRDE
+
+     Zwei große Amber-Zeilen, staggered. QR unten rechts.
+     Kontakt unten links. Die Seite bleibt stehen, während
+     der Applaus kommt.
+     ========================================================= */
+  #station-10 { justify-content: center; padding: 8vh 8vw; }
+  #station-10 .schluss-zeilen {
+    display: flex; flex-direction: column;
+    gap: 3.5vh; align-items: center;
+    text-align: center;
+    max-width: 28ch;
+    margin: 0 auto;
+  }
+  #station-10 .schluss-1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(56px, 8vw, 128px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: var(--amber-dark);
+  }
+  #station-10 .schluss-2 {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 14;
+    font-size: clamp(24px, 2.8vw, 40px);
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    color: var(--amber-dark);
+    max-width: 32ch;
+  }
+  #station-10 .schluss-contact {
+    position: absolute;
+    bottom: 6vh; left: 7vw;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+    opacity: 0;
+    transition: opacity 600ms var(--ease);
+  }
+  #station-10.is-active .schluss-contact { opacity: 1; transition-delay: 5200ms; }
+
+  #station-10 .schluss-qr {
+    position: absolute;
+    bottom: 5vh; right: 7vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 600ms var(--ease);
+  }
+  #station-10.is-active .schluss-qr { opacity: 1; transition-delay: 5800ms; }
+  #station-10 .qr-label {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+  }
+  #station-10 .qr-code {
+    width: 120px; height: 120px;
+    padding: 8px;
+    background: var(--paper);
+    border-radius: 4px;
+  }
+  #station-10 .qr-code svg {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  #station-10.is-active .schluss-1.reveal[data-delay="1"] { transition-delay: 700ms; transition-duration: 1000ms; }
+  #station-10.is-active .schluss-2.reveal[data-delay="3"] { transition-delay: 2800ms; transition-duration: 900ms; }
+
+  /* =========================================================
+     NAV OVERLAY
+     ========================================================= */
+  #nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.94);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms var(--ease);
+    z-index: 100;
+    backdrop-filter: blur(6px);
+  }
+  #nav-overlay.is-open { opacity: 1; pointer-events: auto; }
+  #nav-overlay ol { list-style: none; max-width: 640px; width: 80%; }
+  #nav-overlay .nav-title {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber-dark);
+    margin-bottom: 3vh;
+    text-align: center;
+    opacity: 0.75;
+  }
+  #nav-overlay li {
+    display: grid;
+    grid-template-columns: 70px 1fr 90px;
+    gap: 16px;
+    align-items: baseline;
+    padding: 12px 4px;
+    border-bottom: 1px solid rgba(253, 253, 251, 0.08);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 19px;
+    cursor: pointer;
+    transition: background-color 160ms var(--ease);
+  }
+  #nav-overlay li:hover { background: rgba(217, 168, 74, 0.07); }
+  #nav-overlay li.is-current { color: var(--amber-dark); }
+  #nav-overlay li .idx {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted-dark);
+    text-transform: uppercase;
+  }
+  #nav-overlay li .mode {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted-dark);
+    text-align: right;
+  }
+  #nav-overlay .hint {
+    position: absolute;
+    bottom: 6vh; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 2px;
+    opacity: 0.35;
+  }
+
+  /* =========================================================
+     PROGRESS BAR
+     ========================================================= */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--amber-light);
+    width: 0;
+    transition: width 400ms var(--ease), background-color var(--dur-fade) var(--ease);
+    z-index: 50;
+    opacity: 0.55;
+  }
+  body[data-mode="dark"] #progress { background: var(--amber-dark); }
+
+  ::selection { background: rgba(184, 134, 46, 0.25); }
+</style>
+</head>
+<body data-mode="light">
+
+<div id="progress"></div>
+
+<main id="stage">
+
+  <!-- ============ STATION 1 ============ -->
+  <section class="station" id="station-1" data-station-id="1" data-mode="light">
+    <span class="station-label">Station 1 · Titel</span>
+    <h1 class="title reveal" data-delay="1">Die bessere KI gewinnt</h1>
+    <p class="subtitle reveal" data-delay="2">Wie Regulierung und Ethik KI in Pharma qualitativ stärker machen</p>
+    <div class="meta reveal" data-delay="3">Michael Schmid · Pharma UNO KI Summit · April 2026</div>
+  </section>
+
+  <!-- ============ STATION 2 ============ -->
+  <section class="station" id="station-2" data-station-id="2" data-mode="light">
+    <span class="station-label">Station 2 · Das Versprechen</span>
+    <div class="visual-row reveal" data-delay="1">
+      <svg class="protein-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-label="Proteinstruktur, abstrahiert">
+        <defs>
+          <linearGradient id="proteinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0A0A0A" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0.3"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#proteinGrad)" stroke-width="1.6" stroke-linecap="round">
+          <path d="M60,80 Q90,40 130,70 T200,60 Q240,90 220,140 T180,210 Q150,240 100,220 T50,170 Q30,130 60,80 Z" opacity="0.65"/>
+          <path d="M80,100 Q110,70 145,95 T200,100 Q220,130 200,170 T160,210 Q130,225 100,205 T70,165 Q55,130 80,100 Z" opacity="0.5"/>
+          <path d="M100,120 Q125,100 150,115 T180,125 Q195,150 180,180 T150,205 Q130,215 110,200 T90,170 Q80,145 100,120 Z" opacity="0.4"/>
+        </g>
+        <g fill="#B8862E">
+          <circle cx="60"  cy="80"  r="3"/><circle cx="200" cy="60"  r="3"/>
+          <circle cx="220" cy="140" r="3"/><circle cx="180" cy="210" r="3"/>
+          <circle cx="100" cy="220" r="3"/><circle cx="50"  cy="170" r="3"/>
+        </g>
+        <g fill="#0A0A0A">
+          <circle cx="145" cy="95"  r="2"/><circle cx="200" cy="100" r="2"/>
+          <circle cx="160" cy="210" r="2"/><circle cx="100" cy="205" r="2"/>
+          <circle cx="70"  cy="165" r="2"/>
+        </g>
+      </svg>
+      <svg class="human-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-label="Mensch im offenen Raum, Rückenansicht">
+        <line x1="0" y1="230" x2="300" y2="230" stroke="#0A0A0A" stroke-width="0.5" opacity="0.2"/>
+        <g fill="#0A0A0A" opacity="0.82">
+          <ellipse cx="150" cy="95" rx="22" ry="26"/>
+          <path d="M115,135 Q120,125 150,122 Q180,125 185,135 L195,230 L105,230 Z"/>
+        </g>
+        <ellipse cx="150" cy="230" rx="120" ry="8" fill="#B8862E" opacity="0.18"/>
+      </svg>
+    </div>
+    <div class="caption-wrap reveal" data-delay="2">
+      <div class="caption-block">
+        AlphaFold · 200&nbsp;Mio. Strukturen · Nobelpreis 2024<span class="sep">/</span>Rentosertib · Phase IIa · 2025
+      </div>
+    </div>
+    <div class="merksatz reveal" data-delay="3">
+      Ethik macht Innovation nicht kleiner.<br>
+      Ethik sorgt dafür, dass sie hält, was sie verspricht.
+    </div>
+  </section>
+
+  <!-- ============ STATION 2b ============ -->
+  <section class="station" id="station-2b" data-station-id="2b" data-mode="light">
+    <span class="station-label">Station 2b · Zwei Begeisterungen</span>
+    <div class="blocks">
+      <div class="block reveal" data-delay="1">
+        <span class="kicker">Das Potenzial</span>
+        <div class="figure">
+          <span class="counter" data-from="0" data-to="110" data-prefix="60 – " data-suffix=" Mrd. $ / Jahr">60 – 110 Mrd. $ / Jahr</span>
+        </div>
+        <div class="caption">Ganze Entwicklungszyklen halbiert.</div>
+        <div class="source">McKinsey Global Institute</div>
+      </div>
+      <div class="block reveal" data-delay="2">
+        <span class="kicker">Das Tempo</span>
+        <div class="figure">Exponentiell</div>
+        <div class="caption">Was heute geht, ging vor sechs Monaten nicht.</div>
+        <div class="source">&nbsp;</div>
+      </div>
+    </div>
+    <div class="divider reveal" data-delay="3"></div>
+    <div class="merksatz reveal" data-delay="4">
+      Ich bin nicht skeptisch gegenüber KI. Ich nehme sie ernst.<br>
+      Und genau deshalb rede ich über Ethik.
+    </div>
+  </section>
+
+  <!-- ============ STATION 3 ============ -->
+  <section class="station" id="station-3" data-station-id="3" data-mode="dark">
+    <span class="station-label">Station 3 · Der Turn</span>
+    <div class="old-frame">
+      <span class="old-text">
+        Innovation <span class="small">vs.</span> Regulierung
+        <span class="strike" aria-hidden="true"></span>
+      </span>
+    </div>
+    <div class="pivot">
+      Plausibilität <span class="vs">vs.</span> Belastbarkeit
+    </div>
+    <div class="closing">
+      Die eigentliche Gefahr ist nicht die schwache KI.<br>
+      Die eigentliche Gefahr ist die plausible KI, der man zu schnell zu viel glaubt.
+    </div>
+  </section>
+
+  <!-- ============ STATION 4 ============ -->
+  <section class="station" id="station-4" data-station-id="4" data-mode="light">
+    <span class="station-label">Station 4 · Pharma ist anders</span>
+    <div class="pillars">
+      <div class="pillar"><div class="pillar-word reveal" data-delay="1">Sicher.</div><div class="pillar-base"></div></div>
+      <div class="pillar"><div class="pillar-word reveal" data-delay="2">Wirksam.</div><div class="pillar-base"></div></div>
+      <div class="pillar"><div class="pillar-word reveal" data-delay="3">Nachvollziehbar.</div><div class="pillar-base"></div></div>
+      <div class="pillar"><div class="pillar-word reveal" data-delay="4">Freigabefähig.</div><div class="pillar-base"></div></div>
+    </div>
+    <div class="merksatz reveal" data-delay="6">
+      In Pharma wird technologische Stärke nicht bewundert, <span class="accent">sondern geprüft.</span>
+    </div>
+  </section>
+
+  <!-- ============ STATION 5 ============ -->
+  <section class="station" id="station-5" data-station-id="5" data-mode="light">
+    <span class="station-label">Station 5 · Vier Qualitätsdimensionen</span>
+    <div class="kicker-top reveal" data-delay="1">Zwischen Modell und Wirkung liegt Qualität</div>
+    <div class="cards-grid">
+      <div class="card reveal" data-delay="2">
+        <div class="card-num">01</div>
+        <div class="card-title">Evidenzqualität</div>
+        <div class="card-text">wenn KI klinische Studien mitgestaltet</div>
+      </div>
+      <div class="card reveal" data-delay="3">
+        <div class="card-num">02</div>
+        <div class="card-title">Sicherheitsqualität</div>
+        <div class="card-text">wenn KI Nebenwirkungen priorisiert</div>
+      </div>
+      <div class="card reveal" data-delay="4">
+        <div class="card-num">03</div>
+        <div class="card-title">Orientierungsqualität</div>
+        <div class="card-text">wenn KI mit Patienten spricht</div>
+      </div>
+      <div class="card reveal" data-delay="5">
+        <div class="card-num">04</div>
+        <div class="card-title">Freigabefähigkeit</div>
+        <div class="card-text">wenn KI Prozessdaten bewertet</div>
+      </div>
+    </div>
+    <div class="merksatz reveal" data-delay="6">
+      Aus einem guten Modell wird noch lange <span class="accent">kein gutes Ergebnis.</span>
+    </div>
+  </section>
+
+  <!-- ============ STATION 6 ============ -->
+  <section class="station multi-frame" id="station-6" data-station-id="6" data-mode="dark" data-frames="2" data-active-frame="0">
+    <span class="station-label">Station 6 · Der sensible Moment · Herzstück</span>
+    <div class="frame-pager" aria-hidden="true">
+      <span class="dot" data-dot="0"></span>
+      <span class="dot" data-dot="1"></span>
+    </div>
+
+    <div class="chat-window" id="chat-window">
+      <div class="status-row">
+        <span class="status-dot"></span>
+        <span class="status-text">Aktiv · 23:47</span>
+      </div>
+      <div class="chat-bubble-stack">
+        <div class="chat-typing" id="chat-typing">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div class="chat-bubble" id="chat-bubble">
+          Ist das normal? Muss ich mir Sorgen machen?
+        </div>
+      </div>
+      <div class="timestamp" id="chat-timestamp">23:47</div>
+    </div>
+
+    <div class="frame" data-frame="0">
+      <div class="chat-caption reveal" data-delay="3">
+        Spät abends. Ein Patient. Ein Chatbot.
+      </div>
+    </div>
+
+    <div class="frame" data-frame="1">
+      <div class="escalation-wrap">
+        <div class="escalation">
+          <div class="escalation-row">Schlechte KI antwortet.</div>
+          <div class="escalation-row">Mittlere KI verweist.</div>
+          <div class="escalation-row climax">Gute KI eskaliert.</div>
+        </div>
+        <div class="escalation-merksatz">
+          Im Gesundheitskontext ist eine beruhigende Antwort<br>
+          noch keine belastbare Antwort.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATION 7 ============ -->
+  <section class="station" id="station-7" data-station-id="7" data-mode="light">
+    <span class="station-label">Station 7 · Dasselbe Muster</span>
+
+    <div class="kicker-top reveal" data-delay="1">Überall, wo KI Verantwortung übernimmt</div>
+
+    <div class="pattern-rows">
+      <div class="pattern-row reveal" data-delay="2">
+        <div class="pattern-label">Dosis</div>
+        <div class="pattern-dash">—</div>
+        <div class="pattern-text">belastbar statt plausibel</div>
+      </div>
+      <div class="pattern-row reveal" data-delay="3">
+        <div class="pattern-label">Sicherheitsmeldung</div>
+        <div class="pattern-dash">—</div>
+        <div class="pattern-text">das Relevante nicht übersehen</div>
+      </div>
+      <div class="pattern-row reveal" data-delay="4">
+        <div class="pattern-label">Charge</div>
+        <div class="pattern-dash">—</div>
+        <div class="pattern-text">freigabefähige Entscheidung</div>
+      </div>
+    </div>
+
+    <div class="merksatz reveal" data-delay="6">
+      Qualität zeigt sich oft daran, <span class="accent">was ein System nicht wegpriorisiert.</span>
+    </div>
+  </section>
+
+  <!-- ============ STATION 7b ============ -->
+  <section class="station" id="station-7b" data-station-id="7b" data-mode="light">
+    <span class="station-label">Station 7b · Admin · Organisation · Mensch</span>
+
+    <div class="reduction">
+      <div class="reduction-line reveal" data-delay="1">
+        KI-Implementierung ist technisch selten die Herausforderung.
+      </div>
+      <div class="reduction-line reveal" data-delay="3">
+        Sie sitzt in der <span class="amber-pointe amber-pointe-1">Organisation</span>. Und bei den <span class="amber-pointe amber-pointe-2">Menschen</span>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATION 8 ============ -->
+  <section class="station" id="station-8" data-station-id="8" data-mode="dark">
+    <span class="station-label">Station 8 · Architektur des Vertrauens</span>
+
+    <div class="definitions">
+      <div class="def-row reveal" data-delay="1">
+        <span class="def-label">Regulierung</span><span class="def-separator">:</span>
+        <span class="def-text">Schutz vor Plausibilitätstäuschung.</span>
+      </div>
+      <div class="def-row reveal" data-delay="2">
+        <span class="def-label">Ethik</span><span class="def-separator">:</span>
+        <span class="def-text">Tragfähigkeit jenseits von Funktionalität.</span>
+      </div>
+      <div class="def-row def-synthesis reveal" data-delay="4">
+        <span class="def-label">Zusammen</span><span class="def-separator">:</span>
+        <span class="def-text">Architektur des Vertrauens.</span>
+      </div>
+    </div>
+
+    <div class="vertrauen-merksatz reveal" data-delay="6">
+      Vertrauen ist keine Atmosphäre.<br>
+      <span class="emphasize">Es ist Betriebsbedingung.</span>
+    </div>
+
+    <div class="safety-quote reveal" data-delay="8">
+      „Sicherheit war nie das Ende von Innovation.<br>
+      Sicherheit war oft der Moment, in dem Innovation erwachsen wurde."
+    </div>
+  </section>
+
+  <!-- ============ STATION 8b — Triade · Kerngedanke (3 Frames) ============ -->
+  <section class="station multi-frame" id="station-8b" data-station-id="8b" data-mode="dark" data-frames="3" data-active-frame="0">
+    <span class="station-label">Station 8b · Triade · Kerngedanke</span>
+    <div class="frame-pager" aria-hidden="true">
+      <span class="dot" data-dot="0"></span>
+      <span class="dot" data-dot="1"></span>
+      <span class="dot" data-dot="2"></span>
+    </div>
+
+    <!-- Frame 0: Bausteine -->
+    <div class="frame" data-frame="0">
+      <div class="bausteine-header">Die fünf Bausteine des Vertrauens</div>
+      <div class="bausteine">
+        <div class="baustein">Kompetenz</div>
+        <div class="baustein">Integrität</div>
+        <div class="baustein">Wohlwollen</div>
+        <div class="baustein">Verlässlichkeit</div>
+        <div class="baustein">Transparenz</div>
+      </div>
+    </div>
+
+    <!-- Frame 1: Triade -->
+    <div class="frame" data-frame="1">
+      <div class="triade-heading">Patient · Unternehmen · KI</div>
+      <div class="triade-stage">
+        <svg class="triade-svg" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" aria-label="Triade Patient, Unternehmen, KI">
+          <!-- Existing bond (Patient ↔ Unternehmen) -->
+          <line class="existing-bond" x1="180" y1="170" x2="500" y2="170"
+                stroke="#FDFDFB" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+
+          <!-- Patient node -->
+          <circle class="patient" cx="180" cy="170" r="16" fill="#FDFDFB"/>
+          <text class="label patient-label" x="180" y="215"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="600"
+                font-size="12" letter-spacing="2" fill="#FDFDFB" text-anchor="middle">
+            PATIENT
+          </text>
+
+          <!-- Unternehmen node -->
+          <circle class="unternehmen" cx="500" cy="170" r="16" fill="#FDFDFB"/>
+          <text class="label unternehmen-label" x="500" y="215"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="600"
+                font-size="12" letter-spacing="2" fill="#FDFDFB" text-anchor="middle">
+            UNTERNEHMEN
+          </text>
+
+          <!-- BESTEHEND label on the existing bond -->
+          <text class="label existing-label" x="340" y="160"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="500"
+                font-size="10" letter-spacing="3" fill="#FDFDFB" text-anchor="middle">
+            BESTEHEND
+          </text>
+
+          <!-- New bonds from KI (draw first so nodes sit on top) -->
+          <line class="new-bond" x1="340" y1="85" x2="192" y2="158"
+                stroke="#D9A84A" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+          <line class="new-bond" x1="340" y1="85" x2="488" y2="158"
+                stroke="#D9A84A" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+
+          <!-- KI node -->
+          <circle class="ki" cx="340" cy="85" r="16" fill="#D9A84A"/>
+          <text class="label ki-label" x="340" y="55"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="600"
+                font-size="12" letter-spacing="2" fill="#D9A84A" text-anchor="middle">
+            KI
+          </text>
+
+          <!-- NEU markers on the two new bonds -->
+          <text class="label new-label" x="245" y="112"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="500"
+                font-size="10" letter-spacing="3" fill="#D9A84A" text-anchor="middle"
+                transform="rotate(-28 245 112)">
+            NEU
+          </text>
+          <text class="label new-label" x="435" y="112"
+                font-family="Instrument Sans, Arial, sans-serif" font-weight="500"
+                font-size="10" letter-spacing="3" fill="#D9A84A" text-anchor="middle"
+                transform="rotate(28 435 112)">
+            NEU
+          </text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Frame 2: Verantwortung -->
+    <div class="frame" data-frame="2">
+      <div class="resp-split">
+        <div class="resp-col resp-col-muted">
+          <span class="resp-kicker">Nicht nur</span>
+          Verantwortung für das,<br>was eine KI <em>produziert</em>.
+        </div>
+        <div class="resp-col resp-col-amber">
+          <span class="resp-kicker">Sondern auch</span>
+          Verantwortung für das,<br>was sie <em>wird</em>.
+        </div>
+      </div>
+      <div class="resp-merksatz">
+        Wir tragen nicht nur Verantwortung für das, was eine KI produziert.<br>
+        <span class="amber">Wir tragen auch Verantwortung für das, was sie wird.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATION 9 ============ -->
+  <section class="station" id="station-9" data-station-id="9" data-mode="light">
+    <span class="station-label">Station 9 · Die bessere KI gewinnt</span>
+
+    <div class="nicht-die-liste">
+      <div class="nicht-zeile reveal" data-delay="1">Nicht die schnellste.</div>
+      <div class="nicht-zeile reveal" data-delay="2">Nicht die schrankenloseste.</div>
+      <div class="nicht-zeile reveal" data-delay="3">Nicht die, die am meisten kann.</div>
+    </div>
+
+    <div class="pivot-heading reveal" data-delay="5">Die bessere KI gewinnt.</div>
+
+    <div class="coda reveal" data-delay="6">
+      Gute KI macht Pharma nicht schneller.<br>
+      Gute KI macht Pharma besser.
+    </div>
+  </section>
+
+  <!-- ============ STATION 10 ============ -->
+  <section class="station" id="station-10" data-station-id="10" data-mode="dark">
+    <span class="station-label">Station 10 · Schluss</span>
+
+    <div class="schluss-zeilen">
+      <div class="schluss-1 reveal" data-delay="1">Die bessere KI gewinnt.</div>
+      <div class="schluss-2 reveal" data-delay="3">
+        Und sie gewinnt, weil <em>Sie</em> dafür sorgen,<br>
+        dass sie es kann.
+      </div>
+    </div>
+
+    <div class="schluss-contact">
+      Michael Schmid · start-ki.de · LinkedIn
+    </div>
+
+    <div class="schluss-qr">
+      <div class="qr-label">Zum Nachlesen</div>
+      <div class="qr-code" id="qr-code"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="nav-overlay" role="dialog" aria-label="Stationsübersicht">
+  <div>
+    <div class="nav-title">Stationen</div>
+    <ol id="nav-list"></ol>
+    <div class="hint">ESC zum Schließen · Klick springt zur Station · ← → Clicker</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const STATIONS = [
+    { id: '1',   title: 'Titel',                       mode: 'light', frames: 1 },
+    { id: '2',   title: 'Das Versprechen',             mode: 'light', frames: 1 },
+    { id: '2b',  title: 'Zwei Begeisterungen',         mode: 'light', frames: 1 },
+    { id: '3',   title: 'Plausibel vs. belastbar',     mode: 'dark',  frames: 1 },
+    { id: '4',   title: 'Pharma ist anders',           mode: 'light', frames: 1 },
+    { id: '5',   title: 'Vier Qualitätsdimensionen',   mode: 'light', frames: 1 },
+    { id: '6',   title: 'Der sensible Moment',         mode: 'dark',  frames: 2 },
+    { id: '7',   title: 'Dasselbe Muster',             mode: 'light', frames: 1 },
+    { id: '7b',  title: 'Admin · Organisation',        mode: 'light', frames: 1 },
+    { id: '8',   title: 'Architektur des Vertrauens',  mode: 'dark',  frames: 1 },
+    { id: '8b',  title: 'Triade · Kerngedanke',        mode: 'dark',  frames: 3 },
+    { id: '9',   title: 'Die bessere KI gewinnt',      mode: 'light', frames: 1 },
+    { id: '10',  title: 'Schluss · Würde',             mode: 'dark',  frames: 1 },
+  ];
+
+  let current = 0;
+  let frameIdx = 0;
+  let isAnimatingCounter = false;
+  let chatAnimationTimers = [];
+
+  const body     = document.body;
+  const stage    = document.getElementById('stage');
+  const overlay  = document.getElementById('nav-overlay');
+  const navList  = document.getElementById('nav-list');
+  const progress = document.getElementById('progress');
+
+  STATIONS.forEach((s, i) => {
+    const li = document.createElement('li');
+    li.dataset.idx = i;
+    li.innerHTML = `
+      <span class="idx">${s.id}</span>
+      <span class="ttl">${s.title}</span>
+      <span class="mode">${s.mode === 'dark' ? 'Schwarz' : 'Weiss'}</span>
+    `;
+    li.addEventListener('click', () => { show(i, 0); closeNav(); });
+    navList.appendChild(li);
+  });
+
+  function syncNavList() {
+    [...navList.children].forEach((li, i) => {
+      li.classList.toggle('is-current', i === current);
+    });
+  }
+
+  function show(idx, fIdx) {
+    if (idx < 0 || idx >= STATIONS.length) return;
+    current  = idx;
+    frameIdx = Math.max(0, Math.min(fIdx || 0, (STATIONS[idx].frames || 1) - 1));
+
+    const station = STATIONS[idx];
+    body.setAttribute('data-mode', station.mode);
+
+    stage.querySelectorAll('.station').forEach((sec) => {
+      const on = sec.dataset.stationId === station.id;
+      sec.classList.toggle('is-active', on);
+
+      if (on && sec.classList.contains('multi-frame')) {
+        sec.dataset.activeFrame = String(frameIdx);
+        sec.querySelectorAll('.frame').forEach((f, i) => {
+          f.classList.toggle('is-active-frame', i === frameIdx);
+        });
+        sec.querySelectorAll('.frame-pager .dot').forEach((d, i) => {
+          d.classList.toggle('is-on', i === frameIdx);
+        });
+      }
+    });
+
+    progress.style.width = (((idx + 1) / STATIONS.length) * 100) + '%';
+    syncNavList();
+
+    // Station / frame specific actions
+    if (station.id === '2b') triggerCounter();
+
+    if (station.id === '6') {
+      if (frameIdx === 0) startChatAnimation();
+      else snapChatToAnswered();
+    } else {
+      stopChatAnimation();
+    }
+
+    if (station.id === '10') renderQR();
+  }
+
+  function next() {
+    const station = STATIONS[current];
+    const frames = station.frames || 1;
+    if (frameIdx < frames - 1) show(current, frameIdx + 1);
+    else if (current < STATIONS.length - 1) show(current + 1, 0);
+  }
+
+  function prev() {
+    if (frameIdx > 0) show(current, frameIdx - 1);
+    else if (current > 0) {
+      const prevStation = STATIONS[current - 1];
+      const prevFrames = prevStation.frames || 1;
+      show(current - 1, prevFrames - 1);
+    }
+  }
+
+  // -----------------------------------------------------------
+  // Counter animation (Station 2b)
+  // -----------------------------------------------------------
+  function triggerCounter() {
+    if (isAnimatingCounter) return;
+    const el = document.querySelector('#station-2b .counter');
+    if (!el || el.dataset.animated === '1') return;
+
+    isAnimatingCounter = true;
+    const from   = parseInt(el.dataset.from, 10) || 0;
+    const to     = parseInt(el.dataset.to, 10)   || 0;
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const duration = 1400;
+    const start = performance.now();
+
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = Math.round(from + (to - from) * eased);
+      el.textContent = prefix + value + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+      else { el.dataset.animated = '1'; isAnimatingCounter = false; }
+    }
+    setTimeout(() => requestAnimationFrame(tick), 500);
+  }
+
+  // -----------------------------------------------------------
+  // Chat animation (Station 6)
+  // -----------------------------------------------------------
+  function stopChatAnimation() {
+    chatAnimationTimers.forEach(clearTimeout);
+    chatAnimationTimers = [];
+  }
+  function snapChatToAnswered() {
+    stopChatAnimation();
+    const typing = document.getElementById('chat-typing');
+    const bubble = document.getElementById('chat-bubble');
+    const stamp  = document.getElementById('chat-timestamp');
+    if (!typing || !bubble || !stamp) return;
+    typing.classList.add('is-gone');
+    bubble.classList.add('is-visible');
+    stamp.classList.add('is-visible');
+  }
+  function startChatAnimation() {
+    stopChatAnimation();
+    const typing = document.getElementById('chat-typing');
+    const bubble = document.getElementById('chat-bubble');
+    const stamp  = document.getElementById('chat-timestamp');
+    if (!typing || !bubble || !stamp) return;
+
+    typing.classList.remove('is-gone');
+    bubble.classList.remove('is-visible');
+    stamp.classList.remove('is-visible');
+
+    chatAnimationTimers.push(setTimeout(() => {
+      typing.classList.add('is-gone');
+      bubble.classList.add('is-visible');
+    }, 1800));
+    chatAnimationTimers.push(setTimeout(() => {
+      stamp.classList.add('is-visible');
+    }, 2300));
+  }
+
+  // -----------------------------------------------------------
+  // QR code (Station 10)
+  //   Uses window.location.href as target — points at this
+  //   deployed page. Renders once per session.
+  // -----------------------------------------------------------
+  function renderQR() {
+    if (typeof qrcode === 'undefined') {
+      // lib not ready yet (defer), retry shortly
+      setTimeout(renderQR, 200);
+      return;
+    }
+    const target = document.getElementById('qr-code');
+    if (!target || target.dataset.rendered === '1') return;
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(window.location.href);
+      qr.make();
+      target.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
+      target.dataset.rendered = '1';
+    } catch (e) {
+      // if URL is very long, retry with a stub
+      const qr = qrcode(0, 'L');
+      qr.addData('https://start-ki.de');
+      qr.make();
+      target.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
+      target.dataset.rendered = '1';
+    }
+  }
+
+  // -----------------------------------------------------------
+  // Nav overlay + input
+  // -----------------------------------------------------------
+  function openNav()  { overlay.classList.add('is-open'); }
+  function closeNav() { overlay.classList.remove('is-open'); }
+  function toggleNav() {
+    overlay.classList.contains('is-open') ? closeNav() : openNav();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { toggleNav(); e.preventDefault(); return; }
+    if (overlay.classList.contains('is-open')) return;
+
+    switch (e.key) {
+      case 'ArrowRight': case 'PageDown': case ' ': case 'Spacebar':
+        next(); e.preventDefault(); break;
+      case 'ArrowLeft': case 'PageUp': case 'Backspace':
+        prev(); e.preventDefault(); break;
+      case 'Home': show(0, 0); e.preventDefault(); break;
+      case 'End':  show(STATIONS.length - 1, 0); e.preventDefault(); break;
+    }
+  });
+
+  stage.addEventListener('click', () => {
+    if (overlay.classList.contains('is-open')) return;
+    next();
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeNav();
+  });
+
+  show(0, 0);
+})();
+</script>
+</body>
+</html>
